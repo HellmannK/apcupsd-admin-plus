@@ -10,11 +10,10 @@ You have to install the [apcupsd daemon](http://www.apcupsd.org/) on the host ma
 ### *Portainer Stacks (container-based) installation of the apcupsd daemon:*
 
 ```yml
-version: '3.9'
+version: '4.0'
 services:
   apcupsd:
-    image: bnhf/apcupsd:latest
-    container_name: apcupsd
+    image: localhost/apcupsd:latest
     hostname: apcupsd_ups # Use a unique hostname here for each apcupsd instance, and it'll be used instead of the container number in apcupsd-cgi and Email notifications.
     devices:
       - /dev/usb/hiddev0 # This device needs to match what the APC UPS on your APCUPSD_MASTER system uses -- Comment out this section on APCUPSD_SLAVES
@@ -70,20 +69,11 @@ services:
       - PVE_SHUTDOWN_HOSTS=${PVE_SHUTDOWN_HOSTS} # Ordered list of pve hostnames (or IPs) to be used for API shutdown. Used with matching lists of $PVE_SHUTDOWN_NODES and $PVE_SHUTDOWN_TOKENS
       - PVE_SHUTDOWN_NODES=${PVE_SHUTDOWN_NODES} # Ordered list of pve nodes. Used with matching lists of $PVE_SHUTDOWN_HOSTS and $PVE_SHUTDOWN_TOKENS
       - PVE_SHUTDOWN_TOKENS=${PVE_SHUTDOWN_TOKENS} # Ordered list of pve API tokens with secrets in the form <username>@<node>!<api_token>=<api_secret>
-    
-    # Healthcheck option that'll show if the UPS is ONLINE and communicating with apcupsd in Portainer (recommended):
-    healthcheck:
-      test: ["CMD-SHELL", "apcaccess | grep -E 'ONLINE' >> /dev/null"] # Command to check health
-      interval: 30s # Interval between health checks
-      timeout: 5s # Timeout for each health check
-      retries: 3 # How many times to retry
-      start_period: 15s # Estimated time to boot
       
     # The system_bus_socket binding is always required for host computer shutdowns. The data directory can be a basic binding as shown, or use a Docker Volume if preferred.
     volumes:
       - /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket # Required to support host shutdown from the container
       - /data/apcupsd:/etc/apcupsd # /etc/apcupsd can be bound to a directory or a docker volume
-    restart: unless-stopped
     
 # If you prefer to use Docker Volumes instead of directory bindings, uncomment below as required.
 # volumes: # Use this section for volume bindings only
@@ -128,11 +118,10 @@ Apcupsd-cgi is configured to search and connect to the apcupsd daemon on the hos
 ### *Portainer Stacks (container-based) installation of apcupd-cgi:*
 
 ```yml
-version: '3.9'
+version: '4.0'
 services:
   apcupsd-cgi:
-    image: bnhf/apcupsd-cgi:latest
-    container_name: apcupsd-cgi
+    image: localhost/apcupsd-cgi:latest
     dns_search: localdomain # Set to your LAN's domain name (often local or localdomain), this should help with local DNS resolution of hostnames
     ports:
       - 3552:80
@@ -145,7 +134,6 @@ services:
       - /data/apcupsd-cgi:/etc/apcupsd
       - /data/telegraf:/etc/telegraf # Only required if you'd like this container to place data files (in advance) for use with the companion Grafana Dashboard
       - /data/grafana/provisioning:/etc/grafana/provisioning # Only required if you'd like this container to place data files (in advance) for use with the companion Grafana Dashboard
-    restart: unless-stopped
 ```
 *Environment variables required for the above (or hardcode values into compose):*
 
@@ -184,11 +172,10 @@ And drilling down on one of the UPS units for additional detail:
 ### *Portainer Stacks (container-based) installation of TIG stack to deploy APC UPS dashbaord :*
 
 ```yml
-version: '3.9'
+version: '4.0'
 services:
   influxdb2:
     image: influxdb:latest
-    container_name: influxdb2
     ports:
       - 8086:8086
     volumes:
@@ -202,11 +189,9 @@ services:
       - DOCKER_INFLUXDB_INIT_BUCKET=${BUCKET} # Required, usually <telegraf>
       - DOCKER_INFLUXDB_INIT_RETENTION=${RETENTION} # Required, usually <1w>
       - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${ADMIN_TOKEN} # Required, make up a token or use https://randomkeygen.com CodeIgniter Encryption Keys
-    restart: unless-stopped
     
   telegraf:
     image: telegraf:latest
-    container_name: telegraf
     pid: 'host'
     ports:
       - 8092:8092
@@ -233,11 +218,9 @@ services:
       - /sys:/host/sys:ro
       - /proc:/host/proc:ro
       - /etc:/host/etc:ro
-    restart: unless-stopped
     
   grafana8:
     image: grafana/grafana:latest
-    container_name: grafana8
     ports:
       - 3000:3000
     user: '0:0'
@@ -251,7 +234,6 @@ services:
     volumes:
       - /data/grafana:/var/lib/grafana
       - /data/grafana/provisioning:/etc/grafana/provisioning
-    restart: unless-stopped
 ```
 
 *Environment variables required for the above (or hardcode values into compose):*

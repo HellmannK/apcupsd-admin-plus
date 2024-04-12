@@ -1,0 +1,12 @@
+[Unit]
+Description=apcupsd-cgi container
+Requires=podman.service
+After=podman.service
+
+[Service]
+Restart=always
+ExecStart=/usr/bin/podman start -a apcupsd-cgi
+ExecStop=/usr/bin/podman stop -t 2 apcupsd-cgi
+
+[Install]
+WantedBy=default.target
